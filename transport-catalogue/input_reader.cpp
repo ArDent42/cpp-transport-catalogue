@@ -1,4 +1,6 @@
+#include <algorithm>
 #include "input_reader.h"
+
 
 Transport::Detail::Read::Input::Input(std::istream &in) {
 	std::string str;
@@ -16,24 +18,37 @@ Transport::Detail::Read::Input::Input(std::istream &in) {
 		ReadRawRequest(str);
 		--i;
 	}
-}
-
-void Transport::Detail::Read::Input::ReadRawData(std::string &raw_str) {
-	if (raw_str[0] == 'B') {
-		ReadBus(raw_str);
-	} else {
+	for (std::string &raw_str : raw_stops) {
 		ReadStop(raw_str);
+	}
+	std::for_each(distances.begin(), distances.end(),
+			[&](const auto& dist) {
+		stops.at(dist.first.first).distance_to_another[dist.first.second] = dist.second;
+	}
+	);
+	for (std::string &raw_str : raw_buses) {
+		ReadBus(raw_str);
 	}
 }
 
-void Transport::Detail::Read::Input::ReadBus(std::string &raw_str) {
+void Transport::Detail::Read::Input::Input::ReadRawData(std::string &raw_str) {
+	if (raw_str[0] == 'B') {
+		//ReadBus(raw_str);
+		raw_buses.push_back(raw_str);
+	} else {
+		raw_stops.push_back(raw_str);
+		//ReadStop(raw_str);
+	}
+}
+
+void Transport::Detail::Read::Input::Input::ReadBus(std::string &raw_str) {
 	raw_str = raw_str.substr(4);
 	auto colon_index = raw_str.find_first_of(':');
-	Transport::Detail::Read::Input::Bus bus;
+	Transport::Base::Bus bus;
 	bus.bus_name = raw_str.substr(0, colon_index);
 	raw_str = raw_str.substr(colon_index + 2);
 	auto delimiter = raw_str.find_first_of(">-");
-	bus.is_circle = raw_str[delimiter] == '>' ? true : false;
+	bool is_circle = raw_str[delimiter] == '>' ? true : false;
 	while (!raw_str.empty()) {
 		std::string stop_name;
 		if (delimiter != raw_str.npos) {
@@ -43,17 +58,18 @@ void Transport::Detail::Read::Input::ReadBus(std::string &raw_str) {
 			stop_name = raw_str;
 			raw_str.clear();
 		}
-		bus.stops.push_back(std::move(stop_name));
+		bus.stops.push_back(&stops.at(stop_name));
 		delimiter = raw_str.find_first_of(">-");
 	}
-	if (!bus.is_circle) {
+	if (!is_circle) {
 		bus.stops.reserve(bus.stops.size() * 2 - 1);
-		std::copy(bus.stops.rbegin() + 1, bus.stops.rend(), std::back_inserter(bus.stops));
+		std::copy(bus.stops.rbegin() + 1, bus.stops.rend(),
+				std::back_inserter(bus.stops));
 	}
-	buses.push_back(bus);
+	buses[bus.bus_name] = bus;
 }
 
-void Transport::Detail::Read::Input::ReadStop(std::string &raw_str) {
+void Transport::Detail::Read::Input::Input::ReadStop(std::string &raw_str) {
 	raw_str = raw_str.substr(5);
 	auto colon_index = raw_str.find_first_of(':');
 	std::string stop_name = raw_str.substr(0, colon_index);
@@ -70,13 +86,16 @@ void Transport::Detail::Read::Input::ReadStop(std::string &raw_str) {
 		lng = raw_str.substr(0, comma_index);
 		raw_str = raw_str.substr(comma_index + 2);
 	}
-	stops_and_coord[stop_name].lat = std::stod(lat);
-	stops_and_coord[stop_name].lng = std::stod(lng);
+	stops[stop_name] = { stop_name, { std::stod(lat), std::stod(lng) } };
+	ReadDistances(raw_str, stop_name);
+}
+
+void Transport::Detail::Read::Input::Input::ReadDistances(std::string &raw_str, const std::string &stop_name) {
 	while (!raw_str.empty()) {
 		std::string name_dist_to;
 		std::string length = raw_str.substr(0, raw_str.find_first_of(' ') - 1);
 		raw_str = raw_str.substr(raw_str.find_first_of(' ') + 4);
-		comma_index = raw_str.find_first_of(',');
+		auto comma_index = raw_str.find_first_of(',');
 		if (comma_index == raw_str.npos) {
 			name_dist_to = raw_str;
 			raw_str.clear();
@@ -88,7 +107,7 @@ void Transport::Detail::Read::Input::ReadStop(std::string &raw_str) {
 	}
 }
 
-void Transport::Detail::Read::Input::ReadRawRequest(std::string &raw_str) {
+void Transport::Detail::Read::Input::Input::ReadRawRequest(std::string &raw_str) {
 	if (raw_str[0] == 'B') {
 		raw_str = raw_str.substr(4);
 		requests.push_back(std::make_pair(raw_str, IsBus()));

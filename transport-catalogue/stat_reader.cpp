@@ -1,7 +1,6 @@
 #include "stat_reader.h"
 
-using namespace Transport::Detail::Statistic;
-std::ostream& operator<<(std::ostream &os, const Bus &stat) {
+std::ostream& Transport::Detail::Statistics::operator<<(std::ostream &os, const Transport::Detail::Statistics::BusStat &stat) {
 	if (stat.stops == 0) {
 		os << "Bus " << stat.bus_name << ": not found";
 		return os;
@@ -12,7 +11,7 @@ std::ostream& operator<<(std::ostream &os, const Bus &stat) {
 	return os;
 }
 
-std::ostream& operator<<(std::ostream &os, const Stop &stat) {
+std::ostream& Transport::Detail::Statistics::operator<<(std::ostream &os, const Transport::Detail::Statistics::StopStat &stat) {
 	if (stat.p_buses_per_stop == nullptr) {
 		os << "Stop " << stat.stop_name << ": not found";
 		return os;
