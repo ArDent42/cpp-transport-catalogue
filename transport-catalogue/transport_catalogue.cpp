@@ -5,20 +5,21 @@
 #include <functional>
 #include <set>
 #include <utility>
-#include "input_reader.h"
-#include "stat_reader.h"
 
-void Transport::Base::TransportCatalogue::AddStop(const Transport::Base::Stop &stop) {
+namespace Transport::Base {
+
+void TransportCatalogue::AddStop(const Transport::Base::Stop &stop) {
 	stops_.push_back(stop);
 	p_stops_[stops_.back().stop_name] = &stops_.back();
 }
 
-void Transport::Base::TransportCatalogue::AddBus(const Transport::Base::Bus &bus) {
-	Transport::Base::Bus new_bus { bus.bus_name, { } };
+void TransportCatalogue::AddBus(const Transport::Base::Bus &bus) {
+	Transport::Base::Bus new_bus { bus.bus_name, { }, { } };
 	std::vector<Stop*> stops_temp = bus.stops;
 	for (const Stop *stop : bus.stops) {
 		new_bus.stops.push_back(p_stops_.at(stop->stop_name));
 	}
+	new_bus.is_circle = bus.is_circle;
 	buses_.push_back(new_bus);
 	p_buses_[buses_.back().bus_name] = &buses_.back();
 	for (const auto &stop : p_buses_.at(buses_.back().bus_name)->stops) {
@@ -26,59 +27,50 @@ void Transport::Base::TransportCatalogue::AddBus(const Transport::Base::Bus &bus
 	}
 }
 
-Transport::Detail::Statistics::BusStat Transport::Base::TransportCatalogue::GetBusInfo(
-		const std::string &bus_name) {
-	Transport::Detail::Statistics::BusStat out(bus_name);
-	if (p_buses_.count(bus_name) == 0) {
-		return out;
-	}
-	out.stops = p_buses_.at(bus_name)->stops.size();
-	std::set<Stop*> unique_stops;
-	for (auto &v : p_buses_.at(bus_name)->stops) {
-		unique_stops.insert(v);
-	}
-	out.unique_stops = unique_stops.size();
-	for (size_t i = 0; i < p_buses_.at(bus_name)->stops.size() - 1; ++i) {
-		out.length_geo += ComputeDistance(
-				p_buses_.at(bus_name)->stops[i]->coordinates,
-				p_buses_.at(bus_name)->stops[i + 1]->coordinates);
-		std::string_view first = p_buses_.at(bus_name)->stops[i]->stop_name;
-		std::string_view second = p_buses_.at(bus_name)->stops[i + 1]->stop_name;
-		std::pair<std::string_view, std::string_view> pair_to_find =
-				std::make_pair(std::move(first), std::move(second));
-		auto it = length_.find(pair_to_find);
-		if (it != length_.end()) {
-			out.length_input += it->second;
-		} else {
-			std::swap(pair_to_find.first, pair_to_find.second);
-			it = length_.find(pair_to_find);
-			out.length_input += it->second;
-		}
-		out.curvativity = out.length_input / out.length_geo;
-	}
-	return out;
+void TransportCatalogue::AddDistance(
+		std::pair<std::string_view, std::string_view> stops_pair,
+		double distance) {
+	distances_[stops_pair] = distance;
 }
 
-Transport::Detail::Statistics::StopStat Transport::Base::TransportCatalogue::GetStopInfo(
-		const std::string &stop_name) {
-	Transport::Detail::Statistics::StopStat out(stop_name);
-	if (p_stops_.count(stop_name) == 0) {
-		return out;
+Stop* TransportCatalogue::FindStop(const std::string_view &stop_name) const {
+	if (p_stops_.count(stop_name)) {
+		return p_stops_.at(stop_name);
+	}
+	return nullptr;
+}
+Bus* TransportCatalogue::FindBus(const std::string_view &bus_name) const {
+	if (p_buses_.count(bus_name)) {
+		return p_buses_.at(bus_name);
+	}
+	return nullptr;
+}
+
+std::map<std::string_view, Bus*> TransportCatalogue::GetBuses() const {
+	std::map<std::string_view, Bus*> buses;
+	for (const auto& [bus_name, bus] : p_buses_) {
+		buses[bus_name] = bus;
+	}
+	return buses;
+}
+
+double TransportCatalogue::GetLength(
+		std::pair<std::string_view, std::string_view> pair_of_stops) const {
+	auto it = distances_.find(pair_of_stops);
+	if (it != distances_.end()) {
+		return it->second;
 	} else {
-		out.p_buses_per_stop = &p_buses_per_stop_;
-		return out;
+		std::swap(pair_of_stops.first, pair_of_stops.second);
+		it = distances_.find(pair_of_stops);
+		return it->second;
 	}
 }
-
-void Transport::Base::TransportCatalogue::AddDistances() {
-	for (auto& [stop_name, stop] : p_stops_) {
-		for (auto& [stop_name_another, distance] : stop->distance_to_another) {
-			std::string_view first = stop->stop_name;
-			std::string_view second = p_stops_.at(stop_name_another)->stop_name;
-			std::pair<std::string_view, std::string_view> pair_to_add =
-					std::make_pair(first, second);
-			length_[pair_to_add] = distance;
-		}
-		stop->distance_to_another.clear();
+std::set<std::string_view> TransportCatalogue::GetBusesPerStop(
+		const std::string_view &stop_name) const {
+	if (p_buses_per_stop_.count(stop_name) == 0) {
+		return {};
 	}
+	return p_buses_per_stop_.at(stop_name);
+}
+
 }
