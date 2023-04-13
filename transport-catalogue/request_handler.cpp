@@ -6,6 +6,7 @@
 #include "geo.h"
 #include "domain.h"
 #include "request_handler.h"
+#include "json_builder.h"
 using namespace std::literals;
 
 namespace Transport::Base::Statistics {
@@ -68,11 +69,13 @@ void RequestHandler::MakeStopStatOutput(
 		for (const std::string_view &bus : stop_stat.value().buses_per_stop) {
 			buses.emplace_back(static_cast<std::string>(bus));
 		}
-		stats.emplace_back(json::Dict { { "request_id"s, request.id }, {
-				"buses"s, buses }, });
+		stats.emplace_back(json::Builder{}.StartDict()
+				.Key("request_id"s).Value(request.id)
+				.Key("buses"s).Value(buses).EndDict().Build());
 	} else {
-		stats.emplace_back(json::Dict { { "request_id"s, request.id }, {
-				"error_message"s, "not found"s }, });
+		stats.emplace_back(json::Builder{}.StartDict()
+				.Key("request_id"s).Value(request.id)
+				.Key("error_message"s).Value("not found"s).EndDict().Build());
 	}
 }
 
@@ -81,14 +84,18 @@ void RequestHandler::MakeBusStatOutput(
 	std::optional<Transport::Detail::Statistics::BusStat> bus_stat = GetBusStat(
 			request.name);
 	if (bus_stat) {
-		stats.emplace_back(json::Dict { { "request_id"s, request.id }, {
-				"curvature"s, bus_stat.value().curvativity }, { "route_length"s,
-				bus_stat.value().length_input }, { "stop_count"s,
-				bus_stat.value().stops }, { "unique_stop_count"s,
-				bus_stat.value().unique_stops } });
+		stats.emplace_back(json::Builder{}.StartDict()
+				.Key("request_id"s).Value(request.id)
+				.Key("curvature"s).Value(bus_stat.value().curvativity)
+				.Key("route_length"s).Value(bus_stat.value().length_input)
+				.Key("stop_count"s).Value(bus_stat.value().stops)
+				.Key("unique_stop_count"s).Value(bus_stat.value().unique_stops)
+				.EndDict().Build());
 	} else {
-		stats.emplace_back(json::Dict { { "request_id"s, request.id }, {
-				"error_message"s, "not found"s }, });
+		stats.emplace_back(json::Builder{}.StartDict()
+				.Key("request_id"s).Value(request.id)
+				.Key("error_message"s).Value("not found"s)
+				.EndDict().Build());
 	}
 }
 
@@ -97,21 +104,24 @@ void RequestHandler::MakeMapRendererOutput(
 		svg::Document doc = RenderMap();
 		std::ostringstream str;
 		doc.Render(str);
-		stats.emplace_back(json::Dict { { "request_id"s, request.id }, {"map"s, str.str()} });
+		stats.emplace_back(json::Builder{}.StartDict()
+				.Key("request_id"s).Value(request.id)
+				.Key("map"s).Value(str.str())
+				.EndDict().Build());
 }
 
 void RequestHandler::PrintStats(std::ostream &out) const {
-	json::Array stats;
+	json::Array results = json::Array{};
 	for (const Transport::Base::Request &request : requests_) {
 		if (request.type == "Stop") {
-			MakeStopStatOutput(stats, request);
+			MakeStopStatOutput(results, request);
 		} else if (request.type == "Bus") {
-			MakeBusStatOutput(stats, request);
+			MakeBusStatOutput(results, request);
 		} else {
-			MakeMapRendererOutput(stats,request);
+			MakeMapRendererOutput(results,request);
 		}
 	}
-	json::Document doc { stats };
+	json::Document doc { results };
 	json::Print(doc, out);
 }
 

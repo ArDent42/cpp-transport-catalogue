@@ -8,24 +8,24 @@ namespace Transport::Detail::Read {
 void JsonReader::AddStopsToCatalogue(
 		Transport::Base::TransportCatalogue &db) {
 	json::Array base_requests =
-			document_.GetRoot().AsMap().at("base_requests").AsArray();
+			document_.GetRoot().AsDict().at("base_requests").AsArray();
 	for (const auto &request : base_requests) {
-		std::string str = request.AsMap().at("type").AsString();
+		std::string str = request.AsDict().at("type").AsString();
 		if (str == "Stop") {
-			std::string stop_name = request.AsMap().at("name").AsString();
-			double lng = request.AsMap().at("longitude").AsDouble();
-			double lat = request.AsMap().at("latitude").AsDouble();
+			std::string stop_name = request.AsDict().at("name").AsString();
+			double lng = request.AsDict().at("longitude").AsDouble();
+			double lat = request.AsDict().at("latitude").AsDouble();
 			db.AddStop( { stop_name, { lat, lng } });
 			json::Dict stop_distances =
-					request.AsMap().at("road_distances").AsMap();
+					request.AsDict().at("road_distances").AsDict();
 		}
 	}
 	for (const auto &request : base_requests) {
-		std::string str = request.AsMap().at("type").AsString();
+		std::string str = request.AsDict().at("type").AsString();
 		if (str == "Stop") {
-			std::string stop_name = request.AsMap().at("name").AsString();
+			std::string stop_name = request.AsDict().at("name").AsString();
 			json::Dict stop_distances =
-					request.AsMap().at("road_distances").AsMap();
+					request.AsDict().at("road_distances").AsDict();
 			if (!stop_distances.empty()) {
 				for (const auto &stop_distance : stop_distances) {
 					std::string name_dist_to = stop_distance.first;
@@ -45,14 +45,14 @@ void JsonReader::AddStopsToCatalogue(
 void JsonReader::AddBusesToCatalogue(
 		Transport::Base::TransportCatalogue &db) {
 	json::Array base_requests =
-			document_.GetRoot().AsMap().at("base_requests").AsArray();
+			document_.GetRoot().AsDict().at("base_requests").AsArray();
 	for (const auto &request : base_requests) {
-		std::string str = request.AsMap().at("type").AsString();
+		std::string str = request.AsDict().at("type").AsString();
 		if (str == "Bus") {
 			Transport::Base::Bus bus;
-			bus.bus_name = request.AsMap().at("name").AsString();
-			bus.is_circle = request.AsMap().at("is_roundtrip").AsBool();
-			json::Array stops = request.AsMap().at("stops").AsArray();
+			bus.bus_name = request.AsDict().at("name").AsString();
+			bus.is_circle = request.AsDict().at("is_roundtrip").AsBool();
+			json::Array stops = request.AsDict().at("stops").AsArray();
 			for (const json::Node &stop_name : stops) {
 				bus.stops.push_back(db.FindStop(stop_name.AsString()));
 			}
@@ -70,14 +70,14 @@ void JsonReader::AddRequestsToHandler(
 		Transport::Base::Statistics::RequestHandler &request_handler) {
 	std::vector<Transport::Base::Request> requests;
 	json::Array stat_requests =
-			document_.GetRoot().AsMap().at("stat_requests").AsArray();
+			document_.GetRoot().AsDict().at("stat_requests").AsArray();
 	for (const auto &request : stat_requests) {
-		int id = request.AsMap().at("id").AsInt();
-		std::string type = request.AsMap().at("type").AsString();
+		int id = request.AsDict().at("id").AsInt();
+		std::string type = request.AsDict().at("type").AsString();
 		if (type == "Map"s) {
 			requests.push_back( { id, type, ""s });
 		} else {
-			std::string name = request.AsMap().at("name").AsString();
+			std::string name = request.AsDict().at("name").AsString();
 			requests.push_back( { id, type, name });
 		}
 	}
@@ -103,8 +103,8 @@ svg::Color MakeColor(const json::Node &node) {
 
 void JsonReader::AddRenderSettingsToRenderer(
 		Transport::Renderer::MapRenderer &map_renderer) {
-	json::Dict render_settings = document_.GetRoot().AsMap().at(
-			"render_settings").AsMap();
+	json::Dict render_settings = document_.GetRoot().AsDict().at(
+			"render_settings").AsDict();
 	Transport::Renderer::MapRenderer::RenderSettings settings;
 	settings.width = render_settings.at("width"s).AsDouble();
 	settings.height = render_settings.at("height"s).AsDouble();
