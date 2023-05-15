@@ -21,7 +21,24 @@ struct Request {
 	int id;
 	std::string type;
 	std::string name;
+	std::string from;
+	std::string to;
 };
+
+struct RoutingSettings {
+	double bus_velocity;
+	int waiting_time;
+};
+
+struct RouteEdge {
+	std::string_view name;
+	std::string_view from;
+	std::string_view to;
+	double weight = 0.0;
+	size_t span_count = 0;
+};
+
+
 
 }
 
@@ -49,12 +66,15 @@ struct StopStat {
 	StopStat() = default;
 };
 
+struct RouteStat {
+	std::vector<Transport::Base::RouteEdge> edges;
+	double total_time = 0.0;
+};
+
 }
 
 struct Hasher {
-	size_t operator()(
-			const std::pair<std::string_view, std::string_view> &lenght) const {
-		return (std::hash<std::string_view> { }(lenght.first)
-				+ std::hash<std::string_view> { }(lenght.second));
+	size_t operator()(const std::pair<std::string_view, std::string_view> &lenght) const {
+		return (std::hash<std::string_view> { }(lenght.first) + std::hash<std::string_view> { }(lenght.second));
 	}
 };

@@ -23,6 +23,7 @@ public:
 			Transport::Base::Statistics::RequestHandler &request_handler);
 	void AddRenderSettingsToRenderer(
 			Transport::Renderer::MapRenderer &map_renderer);
+	void AddRouterSettings(Transport::Base::TransportRouter& tr);
 
 private:
 	const json::Document document_;

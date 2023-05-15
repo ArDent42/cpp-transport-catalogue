@@ -12,6 +12,9 @@ void TransportCatalogue::AddStop(const Transport::Base::Stop &stop) {
 	stops_.push_back(stop);
 	p_stops_[stops_.back().stop_name] = &stops_.back();
 }
+size_t TransportCatalogue::GetStopsCount() const {
+	return stops_.size();
+}
 
 void TransportCatalogue::AddBus(const Transport::Base::Bus &bus) {
 	Transport::Base::Bus new_bus { bus.bus_name, { }, { } };
@@ -27,9 +30,7 @@ void TransportCatalogue::AddBus(const Transport::Base::Bus &bus) {
 	}
 }
 
-void TransportCatalogue::AddDistance(
-		std::pair<std::string_view, std::string_view> stops_pair,
-		double distance) {
+void TransportCatalogue::AddDistance(std::pair<std::string_view, std::string_view> stops_pair, double distance) {
 	distances_[stops_pair] = distance;
 }
 
@@ -48,25 +49,29 @@ Bus* TransportCatalogue::FindBus(const std::string_view &bus_name) const {
 
 std::map<std::string_view, Bus*> TransportCatalogue::GetBuses() const {
 	std::map<std::string_view, Bus*> buses;
-	for (const auto& [bus_name, bus] : p_buses_) {
-		buses[bus_name] = bus;
-	}
-	return buses;
+		for (const auto& [bus_name, bus] : p_buses_) {
+			buses[bus_name] = bus;
+		}
+		return buses;
 }
 
-double TransportCatalogue::GetLength(
-		std::pair<std::string_view, std::string_view> pair_of_stops) const {
+std::unordered_map<std::string_view, Stop*> TransportCatalogue::GetStops() const {
+	return p_stops_;
+}
+
+double TransportCatalogue::GetLength(std::pair<std::string_view, std::string_view> pair_of_stops) const {
 	auto it = distances_.find(pair_of_stops);
 	if (it != distances_.end()) {
 		return it->second;
-	} else {
-		std::swap(pair_of_stops.first, pair_of_stops.second);
-		it = distances_.find(pair_of_stops);
+	}
+	std::swap(pair_of_stops.first, pair_of_stops.second);
+	it = distances_.find(pair_of_stops);
+	if (it != distances_.end()) {
 		return it->second;
 	}
+	return 0.0;
 }
-std::set<std::string_view> TransportCatalogue::GetBusesPerStop(
-		const std::string_view &stop_name) const {
+std::set<std::string_view> TransportCatalogue::GetBusesPerStop(const std::string_view &stop_name) const {
 	if (p_buses_per_stop_.count(stop_name) == 0) {
 		return {};
 	}
