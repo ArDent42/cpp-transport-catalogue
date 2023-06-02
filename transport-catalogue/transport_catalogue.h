@@ -27,6 +27,9 @@ public:
 	Bus* FindBus(const std::string_view &bus_name) const;
 	std::map<std::string_view, Bus*> GetBuses() const;
 	std::unordered_map<std::string_view, Stop*> GetStops() const;
+	std::unordered_map<std::pair<std::string_view, std::string_view>, double, Hasher> GetDistances() const {
+		return distances_;
+	}
 	double GetLength(std::pair<std::string_view, std::string_view> pair_of_stops) const;
 	std::set<std::string_view> GetBusesPerStop(const std::string_view &stop_name) const;
 };

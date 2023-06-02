@@ -9,6 +9,7 @@
 #include "json.h"
 #include "request_handler.h"
 #include "map_renderer.h"
+#include "serialization.h"
 
 namespace Transport::Detail::Read {
 
@@ -24,6 +25,7 @@ public:
 	void AddRenderSettingsToRenderer(
 			Transport::Renderer::MapRenderer &map_renderer);
 	void AddRouterSettings(Transport::Base::TransportRouter& tr);
+	Serialization::SerializationSettings GetSerializationSettings() const;
 
 private:
 	const json::Document document_;

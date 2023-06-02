@@ -144,6 +144,10 @@ void MapRenderer::CreateStopNames(svg::Document &doc) const {
 	}
 }
 
+Transport::Renderer::MapRenderer::RenderSettings MapRenderer::GetSettings() const {
+		return render_settings_;
+	}
+
 svg::Document MapRenderer::Render(
 		const Transport::Base::TransportCatalogue &db_) {
 	svg::Document doc;

@@ -22,6 +22,9 @@ public:
 
 	void AddRouterSettings(const Transport::Base::RoutingSettings &rs);
 	const graph::DirectedWeightedGraph<double>& GetGraph() const;
+	Transport::Base::RoutingSettings GetSettings() const {
+		return routing_settings_;
+	}
 private:
 	graph::DirectedWeightedGraph<double> graph_;
 	Transport::Base::RoutingSettings routing_settings_;

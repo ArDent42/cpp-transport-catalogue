@@ -103,6 +103,7 @@ private:
 public:
 	void SetSettings(const RenderSettings &settings);
 	SphereProjector CreateProjector();
+	RenderSettings GetSettings() const;
 	void CreateLines(svg::Document& doc) const;
 	void CreateBusNames(svg::Document& doc) const;
 	void CreateBusText(svg::Document& doc, const svg::Point &position,

@@ -77,7 +77,7 @@ void JsonReader::AddRequestsToHandler(Transport::Base::Statistics::RequestHandle
 	request_handler.AddRequests(requests);
 }
 
-void JsonReader::AddRouterSettings(Transport::Base::TransportRouter& tr) {
+void JsonReader::AddRouterSettings(Transport::Base::TransportRouter &tr) {
 	json::Dict settings = document_.GetRoot().AsDict().at("routing_settings").AsDict();
 	tr.AddRouterSettings( { settings.at("bus_velocity"s).AsDouble(), settings.at("bus_wait_time"s).AsInt() });
 }
@@ -120,6 +120,11 @@ void JsonReader::AddRenderSettingsToRenderer(Transport::Renderer::MapRenderer &m
 		settings.color_palette.push_back(color);
 	}
 	map_renderer.SetSettings(settings);
+}
+
+Serialization::SerializationSettings JsonReader::GetSerializationSettings() const {
+	json::Dict serialization_settings = document_.GetRoot().AsDict().at("serialization_settings").AsDict();
+	return {serialization_settings.at("file").AsString()};
 }
 
 }

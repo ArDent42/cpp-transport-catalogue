@@ -32,7 +32,6 @@ private:
 	Transport::Renderer::MapRenderer &mr_;
 	TransportRouter &tr_;
 	std::vector<Transport::Base::Request> requests_;
-	graph::DirectedWeightedGraph<double> graph_;
 };
 
 }
